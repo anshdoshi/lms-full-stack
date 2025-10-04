@@ -1,28 +1,69 @@
 import { v2 as cloudinary } from 'cloudinary'
 import Course from '../models/Course.js';
 import { Purchase } from '../models/Purchase.js';
+import { Payment } from '../models/Payment.js';
 import User from '../models/User.js';
-import { clerkClient } from '@clerk/express'
+import EducatorApplication from '../models/EducatorApplication.js';
 
-// update role to educator
-export const updateRoleToEducator = async (req, res) => {
+// Apply to become educator
+export const applyForEducator = async (req, res) => {
 
     try {
 
-        const userId = req.auth.userId
+        const userId = req.userId
+        const { message } = req.body
 
-        await clerkClient.users.updateUserMetadata(userId, {
-            publicMetadata: {
-                role: 'educator',
-            },
+        if (!message || message.trim().length < 20) {
+            return res.json({ success: false, message: 'Please provide a detailed message (minimum 20 characters)' })
+        }
+
+        // Check if user already has an application
+        const existingApplication = await EducatorApplication.findOne({ userId, status: 'pending' })
+        if (existingApplication) {
+            return res.json({ success: false, message: 'You already have a pending application' })
+        }
+
+        // Check if user is already an educator
+        const user = await User.findById(userId)
+        if (user.role === 'educator' || user.role === 'admin') {
+            return res.json({ success: false, message: 'You are already an educator' })
+        }
+
+        // Create application
+        await EducatorApplication.create({
+            userId,
+            message,
+            status: 'pending'
         })
 
-        res.json({ success: true, message: 'You can publish a course now' })
+        res.json({ success: true, message: 'Application submitted successfully. Please wait for admin approval.' })
 
     } catch (error) {
         res.json({ success: false, message: error.message })
     }
 
+}
+
+// Check educator application status
+export const getEducatorApplicationStatus = async (req, res) => {
+    try {
+        const userId = req.userId
+
+        const application = await EducatorApplication.findOne({ userId }).sort({ createdAt: -1 })
+
+        if (!application) {
+            return res.json({ success: true, status: 'none', message: 'No application found' })
+        }
+
+        res.json({
+            success: true,
+            status: application.status,
+            application
+        })
+
+    } catch (error) {
+        res.json({ success: false, message: error.message })
+    }
 }
 
 // Add New Course
@@ -34,7 +75,7 @@ export const addCourse = async (req, res) => {
 
         const imageFile = req.file
 
-        const educatorId = req.auth.userId
+        const educatorId = req.userId
 
         if (!imageFile) {
             return res.json({ success: false, message: 'Thumbnail Not Attached' })
@@ -65,7 +106,7 @@ export const addCourse = async (req, res) => {
 export const getEducatorCourses = async (req, res) => {
     try {
 
-        const educator = req.auth.userId
+        const educator = req.userId
 
         const courses = await Course.find({ educator })
 
@@ -79,7 +120,7 @@ export const getEducatorCourses = async (req, res) => {
 // Get Educator Dashboard Data ( Total Earning, Enrolled Students, No. of Courses)
 export const educatorDashboardData = async (req, res) => {
     try {
-        const educator = req.auth.userId;
+        const educator = req.userId;
 
         const courses = await Course.find({ educator });
 
@@ -87,13 +128,13 @@ export const educatorDashboardData = async (req, res) => {
 
         const courseIds = courses.map(course => course._id);
 
-        // Calculate total earnings from purchases
-        const purchases = await Purchase.find({
+        // Calculate total earnings from payments (Razorpay)
+        const payments = await Payment.find({
             courseId: { $in: courseIds },
             status: 'completed'
         });
 
-        const totalEarnings = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+        const totalEarnings = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
         // Collect unique enrolled student IDs with their course titles
         const enrolledStudentsData = [];
@@ -123,10 +164,10 @@ export const educatorDashboardData = async (req, res) => {
     }
 };
 
-// Get Enrolled Students Data with Purchase Data
+// Get Enrolled Students Data with Payment Data
 export const getEnrolledStudentsData = async (req, res) => {
     try {
-        const educator = req.auth.userId;
+        const educator = req.userId;
 
         // Fetch all courses created by the educator
         const courses = await Course.find({ educator });
@@ -134,17 +175,17 @@ export const getEnrolledStudentsData = async (req, res) => {
         // Get the list of course IDs
         const courseIds = courses.map(course => course._id);
 
-        // Fetch purchases with user and course data
-        const purchases = await Purchase.find({
+        // Fetch payments with user and course data
+        const payments = await Payment.find({
             courseId: { $in: courseIds },
             status: 'completed'
         }).populate('userId', 'name imageUrl').populate('courseId', 'courseTitle');
 
         // enrolled students data
-        const enrolledStudents = purchases.map(purchase => ({
-            student: purchase.userId,
-            courseTitle: purchase.courseId.courseTitle,
-            purchaseDate: purchase.createdAt
+        const enrolledStudents = payments.map(payment => ({
+            student: payment.userId,
+            courseTitle: payment.courseId.courseTitle,
+            purchaseDate: payment.createdAt
         }));
 
         res.json({

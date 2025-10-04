@@ -1,8 +1,10 @@
 import Course from "../models/Course.js"
 import { CourseProgress } from "../models/CourseProgress.js"
 import { Purchase } from "../models/Purchase.js"
+import { Payment } from "../models/Payment.js"
 import User from "../models/User.js"
-import stripe from "stripe"
+import Razorpay from "razorpay"
+import crypto from "crypto"
 
 
 
@@ -10,9 +12,9 @@ import stripe from "stripe"
 export const getUserData = async (req, res) => {
     try {
 
-        const userId = req.auth.userId
+        const userId = req.userId
 
-        const user = await User.findById(userId)
+        const user = await User.findById(userId).select('-password')
 
         if (!user) {
             return res.json({ success: false, message: 'User Not Found' })
@@ -25,16 +27,21 @@ export const getUserData = async (req, res) => {
     }
 }
 
-// Purchase Course 
+// Purchase Course (Razorpay Integration)
 export const purchaseCourse = async (req, res) => {
 
     try {
+        // Check if Razorpay is configured
+        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            return res.json({
+                success: false,
+                message: 'Payment system under development. Please try again later.',
+                paymentConfigured: false
+            });
+        }
 
         const { courseId } = req.body
-        const { origin } = req.headers
-
-
-        const userId = req.auth.userId
+        const userId = req.userId
 
         const courseData = await Course.findById(courseId)
         const userData = await User.findById(userId)
@@ -43,46 +50,92 @@ export const purchaseCourse = async (req, res) => {
             return res.json({ success: false, message: 'Data Not Found' })
         }
 
-        const purchaseData = {
-            courseId: courseData._id,
-            userId,
-            amount: (courseData.coursePrice - courseData.discount * courseData.coursePrice / 100).toFixed(2),
-        }
+        // Calculate final amount
+        const amount = (courseData.coursePrice - courseData.discount * courseData.coursePrice / 100).toFixed(2)
 
-        const newPurchase = await Purchase.create(purchaseData)
-
-        // Stripe Gateway Initialize
-        const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
-
-        const currency = process.env.CURRENCY.toLocaleLowerCase()
-
-        // Creating line items to for Stripe
-        const line_items = [{
-            price_data: {
-                currency,
-                product_data: {
-                    name: courseData.courseTitle
-                },
-                unit_amount: Math.floor(newPurchase.amount) * 100
-            },
-            quantity: 1
-        }]
-
-        const session = await stripeInstance.checkout.sessions.create({
-            success_url: `${origin}/loading/my-enrollments`,
-            cancel_url: `${origin}/`,
-            line_items: line_items,
-            mode: 'payment',
-            metadata: {
-                purchaseId: newPurchase._id.toString()
-            }
+        // Initialize Razorpay
+        const razorpayInstance = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET
         })
 
-        res.json({ success: true, session_url: session.url });
+        // Create Razorpay order
+        const options = {
+            amount: Math.floor(amount * 100), // Amount in paise
+            currency: process.env.CURRENCY || 'INR',
+            receipt: `receipt_${Date.now()}`
+        }
 
+        const order = await razorpayInstance.orders.create(options)
+
+        // Save payment record
+        const newPayment = await Payment.create({
+            userId,
+            courseId: courseData._id,
+            amount: amount,
+            razorpayOrderId: order.id,
+            status: 'pending'
+        })
+
+        res.json({
+            success: true,
+            orderId: order.id,
+            amount: amount,
+            currency: options.currency,
+            keyId: process.env.RAZORPAY_KEY_ID,
+            paymentId: newPayment._id
+        });
 
     } catch (error) {
         res.json({ success: false, message: error.message });
+    }
+}
+
+// Verify Razorpay Payment
+export const verifyPayment = async (req, res) => {
+    try {
+        const { razorpayOrderId, razorpayPaymentId, razorpaySignature, paymentId } = req.body
+        const userId = req.userId
+
+        // Verify signature
+        const sign = razorpayOrderId + "|" + razorpayPaymentId
+        const expectedSign = crypto
+            .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+            .update(sign.toString())
+            .digest("hex")
+
+        if (razorpaySignature !== expectedSign) {
+            return res.json({ success: false, message: 'Payment verification failed' })
+        }
+
+        // Update payment record
+        const payment = await Payment.findById(paymentId)
+        if (!payment) {
+            return res.json({ success: false, message: 'Payment record not found' })
+        }
+
+        payment.razorpayPaymentId = razorpayPaymentId
+        payment.razorpaySignature = razorpaySignature
+        payment.status = 'completed'
+        await payment.save()
+
+        // Enroll user in course
+        const courseData = await Course.findById(payment.courseId)
+        const userData = await User.findById(userId)
+
+        courseData.enrolledStudents.push(userData)
+        await courseData.save()
+
+        userData.enrolledCourses.push(courseData._id)
+        await userData.save()
+
+        res.json({
+            success: true,
+            message: 'Payment verified and enrollment successful'
+        })
+
+    } catch (error) {
+        res.json({ success: false, message: error.message })
     }
 }
 
@@ -91,7 +144,7 @@ export const userEnrolledCourses = async (req, res) => {
 
     try {
 
-        const userId = req.auth.userId
+        const userId = req.userId
 
         const userData = await User.findById(userId)
             .populate('enrolledCourses')
@@ -109,7 +162,7 @@ export const updateUserCourseProgress = async (req, res) => {
 
     try {
 
-        const userId = req.auth.userId
+        const userId = req.userId
 
         const { courseId, lectureId } = req.body
 
@@ -147,7 +200,7 @@ export const getUserCourseProgress = async (req, res) => {
 
     try {
 
-        const userId = req.auth.userId
+        const userId = req.userId
 
         const { courseId } = req.body
 
@@ -164,7 +217,7 @@ export const getUserCourseProgress = async (req, res) => {
 // Add User Ratings to Course
 export const addUserRating = async (req, res) => {
 
-    const userId = req.auth.userId;
+    const userId = req.userId;
     const { courseId, rating } = req.body;
 
     // Validate inputs
