@@ -7,8 +7,8 @@ import { AppContext } from '../../context/AppContext';
 import { toast } from 'react-toastify';
 import humanizeDuration from 'humanize-duration'
 import YouTube from 'react-youtube';
-import { useAuth } from '@clerk/clerk-react';
 import Loading from '../../components/student/Loading';
+import { userAPI } from '../../utils/api';
 
 const CourseDetails = () => {
 
@@ -18,8 +18,7 @@ const CourseDetails = () => {
   const [playerData, setPlayerData] = useState(null)
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false)
 
-  const { backendUrl, currency, userData, calculateChapterTime, calculateCourseDuration, calculateRating, calculateNoOfLectures } = useContext(AppContext)
-  const { getToken } = useAuth()
+  const { backendUrl, currency, userData, user, calculateChapterTime, calculateCourseDuration, calculateRating, calculateNoOfLectures } = useContext(AppContext)
 
 
   const fetchCourseData = async () => {
@@ -56,7 +55,7 @@ const CourseDetails = () => {
 
     try {
 
-      if (!userData) {
+      if (!user) {
         return toast.warn('Login to Enroll')
       }
 
@@ -64,22 +63,69 @@ const CourseDetails = () => {
         return toast.warn('Already Enrolled')
       }
 
-      const token = await getToken();
-
-      const { data } = await axios.post(backendUrl + '/api/user/purchase',
-        { courseId: courseData._id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
+      const { data } = await userAPI.purchaseCourse(courseData._id)
 
       if (data.success) {
-        const { session_url } = data
-        window.location.replace(session_url)
+        // Check if payment is configured (backend returns orderId when Razorpay is configured)
+        if (data.orderId && data.keyId) {
+          // Razorpay payment flow
+          const options = {
+            key: data.keyId,
+            amount: data.amount * 100, // Convert to paise
+            currency: data.currency,
+            name: 'Yunay-CA Academy',
+            description: courseData.courseTitle,
+            order_id: data.orderId,
+            handler: async function (response) {
+              try {
+                const verifyData = await userAPI.verifyPayment({
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                  paymentId: data.paymentId
+                });
+                
+                if (verifyData.data.success) {
+                  toast.success('Payment successful! Redirecting...');
+                  // Redirect to success page
+                  setTimeout(() => {
+                    window.location.href = `/payment-success?courseId=${courseData._id}&paymentId=${response.razorpay_payment_id}`;
+                  }, 1000);
+                }
+              } catch (error) {
+                toast.error('Payment verification failed');
+                // Redirect to failure page
+                window.location.href = `/payment-failure?courseId=${courseData._id}&reason=verification_failed`;
+              }
+            },
+            modal: {
+              ondismiss: function() {
+                // User closed the payment modal
+                toast.info('Payment cancelled');
+                window.location.href = `/payment-failure?courseId=${courseData._id}&reason=cancelled`;
+              }
+            },
+            theme: {
+              color: '#3B82F6'
+            }
+          };
+          
+          const razorpay = new window.Razorpay(options);
+          razorpay.on('payment.failed', function (response) {
+            toast.error('Payment failed');
+            window.location.href = `/payment-failure?courseId=${courseData._id}&reason=payment_failed`;
+          });
+          razorpay.open();
+        } else {
+          // Payment system not configured or free course
+          toast.info(data.message || 'Payment system under development');
+        }
       } else {
         toast.error(data.message)
       }
 
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.response?.data?.message || error.message)
     }
   }
 

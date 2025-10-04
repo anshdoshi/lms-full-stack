@@ -7,14 +7,12 @@ import Loading from '../../components/student/Loading';
 
 const Dashboard = () => {
 
-  const { backendUrl, isEducator, currency, getToken } = useContext(AppContext)
+  const { backendUrl, isEducator, currency, token } = useContext(AppContext)
 
   const [dashboardData, setDashboardData] = useState(null)
 
   const fetchDashboardData = async () => {
     try {
-
-      const token = await getToken()
 
       const { data } = await axios.get(backendUrl + '/api/educator/dashboard',
         { headers: { Authorization: `Bearer ${token}` } }

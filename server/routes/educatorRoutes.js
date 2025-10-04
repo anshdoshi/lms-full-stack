@@ -1,25 +1,28 @@
 import express from 'express'
-import { addCourse, educatorDashboardData, getEducatorCourses, getEnrolledStudentsData, updateRoleToEducator } from '../controllers/educatorController.js';
+import { addCourse, educatorDashboardData, getEducatorCourses, getEnrolledStudentsData, applyForEducator, getEducatorApplicationStatus, getCourseById, updateCourse, deleteCourse } from '../controllers/educatorController.js';
 import upload from '../configs/multer.js';
-import { protectEducator } from '../middlewares/authMiddleware.js';
+import { authenticate, isEducator } from '../middlewares/auth.js';
 
 
 const educatorRouter = express.Router()
 
-// Add Educator Role 
-educatorRouter.get('/update-role', updateRoleToEducator)
+// All educator routes require authentication
+educatorRouter.use(authenticate)
 
-// Add Courses 
-educatorRouter.post('/add-course', upload.single('image'), protectEducator, addCourse)
+// Apply to become educator (for regular users)
+educatorRouter.post('/apply', applyForEducator)
 
-// Get Educator Courses 
-educatorRouter.get('/courses', protectEducator, getEducatorCourses)
+// Check application status
+educatorRouter.get('/application-status', getEducatorApplicationStatus)
 
-// Get Educator Dashboard Data
-educatorRouter.get('/dashboard', protectEducator, educatorDashboardData)
-
-// Get Educator Students Data
-educatorRouter.get('/enrolled-students', protectEducator, getEnrolledStudentsData)
+// Educator-only routes
+educatorRouter.post('/add-course', upload.any(), isEducator, addCourse)
+educatorRouter.get('/courses', isEducator, getEducatorCourses)
+educatorRouter.get('/courses/:id', isEducator, getCourseById)
+educatorRouter.put('/courses/:id', upload.single('image'), isEducator, updateCourse)
+educatorRouter.delete('/courses/:id', isEducator, deleteCourse)
+educatorRouter.get('/dashboard', isEducator, educatorDashboardData)
+educatorRouter.get('/enrolled-students', isEducator, getEnrolledStudentsData)
 
 
 export default educatorRouter;

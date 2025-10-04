@@ -12,7 +12,7 @@ import Loading from '../../components/student/Loading';
 
 const Player = ({ }) => {
 
-  const { enrolledCourses, backendUrl, getToken, calculateChapterTime, userData, fetchUserEnrolledCourses } = useContext(AppContext)
+  const { enrolledCourses, backendUrl, token, calculateChapterTime, userData, fetchUserEnrolledCourses } = useContext(AppContext)
 
   const { courseId } = useParams()
   const [courseData, setCourseData] = useState(null)
@@ -52,8 +52,6 @@ const Player = ({ }) => {
 
     try {
 
-      const token = await getToken()
-
       const { data } = await axios.post(backendUrl + '/api/user/update-course-progress',
         { courseId, lectureId },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -76,8 +74,6 @@ const Player = ({ }) => {
 
     try {
 
-      const token = await getToken()
-
       const { data } = await axios.post(backendUrl + '/api/user/get-course-progress',
         { courseId },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -98,8 +94,6 @@ const Player = ({ }) => {
   const handleRate = async (rating) => {
 
     try {
-
-      const token = await getToken()
 
       const { data } = await axios.post(backendUrl + '/api/user/add-rating',
         { courseId, rating },
@@ -176,7 +170,39 @@ const Player = ({ }) => {
           playerData
             ? (
               <div>
-                <YouTube iframeClassName='w-full aspect-video' videoId={playerData.lectureUrl.split('/').pop()} />
+                {/* Check if it's a YouTube video or uploaded video */}
+                {playerData.videoType === 'youtube' || playerData.lectureUrl.includes('youtube.com') || playerData.lectureUrl.includes('youtu.be') ? (
+                  <YouTube 
+                    iframeClassName='w-full aspect-video' 
+                    videoId={(() => {
+                      const url = playerData.lectureUrl;
+                      // Handle youtube.com/watch?v=VIDEO_ID format
+                      if (url.includes('watch?v=')) {
+                        return url.split('watch?v=')[1].split('&')[0];
+                      }
+                      // Handle youtu.be/VIDEO_ID format
+                      if (url.includes('youtu.be/')) {
+                        return url.split('youtu.be/')[1].split('?')[0];
+                      }
+                      // Handle youtube.com/embed/VIDEO_ID format
+                      if (url.includes('/embed/')) {
+                        return url.split('/embed/')[1].split('?')[0];
+                      }
+                      // Fallback: return the URL as is
+                      return url;
+                    })()} 
+                  />
+                ) : (
+                  <video 
+                    className='w-full aspect-video bg-black rounded'
+                    controls
+                    controlsList="nodownload"
+                    onContextMenu={(e) => e.preventDefault()}
+                  >
+                    <source src={playerData.lectureUrl} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
                 <div className='flex justify-between items-center mt-1'>
                   <p className='text-xl '>{playerData.chapter}.{playerData.lecture} {playerData.lectureTitle}</p>
                   <button onClick={() => markLectureAsCompleted(playerData.lectureId)} className='text-blue-600'>{progressData && progressData.lectureCompleted.includes(playerData.lectureId) ? 'Completed' : 'Mark Complete'}</button>

@@ -1,18 +1,13 @@
 import React, { useState } from 'react'
 import { assets } from '../../assets/assets'
-import { useNavigate } from 'react-router-dom'
 
 const SearchBar = ({ data }) => {
-
-  const navigate = useNavigate()
 
   const [input, setInput] = useState(data ? data : '')
 
   const onSearchHandler = (e) => {
     e.preventDefault()
-
-    navigate('/course-list/' + input)
-
+    window.location.href = '/course-list/' + input
   }
 
   return (
