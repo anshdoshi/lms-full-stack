@@ -1,6 +1,5 @@
 import axios from "axios";
 import { createContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import humanizeDuration from "humanize-duration";
 import { authAPI, userAPI } from "../utils/api";
@@ -11,8 +10,6 @@ export const AppContextProvider = (props) => {
 
     const backendUrl = import.meta.env.VITE_BACKEND_URL
     const currency = import.meta.env.VITE_CURRENCY
-
-    const navigate = useNavigate()
 
     const [showLogin, setShowLogin] = useState(false)
     const [user, setUser] = useState(null)
@@ -104,7 +101,7 @@ export const AppContextProvider = (props) => {
             setIsAdmin(false);
             setEnrolledCourses([]);
             toast.success('Logged out successfully');
-            navigate('/');
+            window.location.href = '/';
         } catch (error) {
             toast.error(error.message);
         }
@@ -239,7 +236,7 @@ export const AppContextProvider = (props) => {
 
     const value = {
         showLogin, setShowLogin,
-        backendUrl, currency, navigate,
+        backendUrl, currency,
         user, token, loading,
         login, register, logout,
         userData, setUserData,

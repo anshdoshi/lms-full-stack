@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { assets } from '../../assets/assets';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 import { toast } from 'react-toastify';
 import { educatorAPI } from '../../utils/api';
@@ -8,9 +8,10 @@ import { educatorAPI } from '../../utils/api';
 const Navbar = () => {
 
   const location = useLocation();
+  const navigate = useNavigate();
   const isCoursesListPage = location.pathname.includes('/course-list');
 
-  const { user, isEducator, isAdmin, navigate, logout } = useContext(AppContext);
+  const { user, isEducator, isAdmin, logout } = useContext(AppContext);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const becomeEducator = async () => {
@@ -35,7 +36,7 @@ const Navbar = () => {
 
   return (
     <div className={`flex items-center justify-between px-4 sm:px-10 md:px-14 lg:px-36 border-b border-gray-500 py-4 ${isCoursesListPage ? 'bg-white' : 'bg-cyan-100/70'}`}>
-      <img onClick={() => navigate('/')} src={assets.logo} alt="Logo" className="w-28 lg:w-32 cursor-pointer" />
+      <img onClick={() => navigate('/')} src={assets.yunay_logo} alt="Yunay-CA Academy" className="w-28 lg:w-32 cursor-pointer" />
 
       {/* Desktop Navigation */}
       <div className="md:flex hidden items-center gap-5 text-gray-500">

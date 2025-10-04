@@ -5,6 +5,7 @@ import { Payment } from "../models/Payment.js"
 import User from "../models/User.js"
 import Razorpay from "razorpay"
 import crypto from "crypto"
+import { v2 as cloudinary } from 'cloudinary'
 
 
 
@@ -255,5 +256,53 @@ export const addUserRating = async (req, res) => {
         return res.json({ success: true, message: 'Rating added' });
     } catch (error) {
         return res.json({ success: false, message: error.message });
+    }
+};
+
+// Update User Profile
+export const updateUserProfile = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const { name, bio, phone } = req.body;
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        // Update basic fields
+        if (name) user.name = name;
+        if (bio !== undefined) user.bio = bio;
+        if (phone !== undefined) user.phone = phone;
+
+        // Handle image upload if provided
+        if (req.file) {
+            try {
+                // Upload to cloudinary
+                const imageUpload = await cloudinary.uploader.upload(req.file.path, {
+                    resource_type: 'image',
+                    folder: 'profile-images'
+                });
+
+                user.imageUrl = imageUpload.secure_url;
+            } catch (uploadError) {
+                return res.json({ success: false, message: 'Image upload failed' });
+            }
+        }
+
+        await user.save();
+
+        // Return updated user without password
+        const updatedUser = await User.findById(userId).select('-password');
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user: updatedUser
+        });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
     }
 };

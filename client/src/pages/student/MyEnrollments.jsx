@@ -1,19 +1,20 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../../context/AppContext'
+import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { Line } from 'rc-progress';
 import Footer from '../../components/student/Footer';
+import { toast } from 'react-toastify';
 
 const MyEnrollments = () => {
 
-    const { userData, enrolledCourses, fetchUserEnrolledCourses, navigate, backendUrl, getToken, calculateCourseDuration, calculateNoOfLectures } = useContext(AppContext)
+    const { userData, enrolledCourses, fetchUserEnrolledCourses, backendUrl, token, calculateCourseDuration, calculateNoOfLectures } = useContext(AppContext)
+    const navigate = useNavigate()
 
     const [progressArray, setProgressData] = useState([])
 
     const getCourseProgress = async () => {
         try {
-            const token = await getToken();
-
             // Use Promise.all to handle multiple async operations
             const tempProgressArray = await Promise.all(
                 enrolledCourses.map(async (course) => {

@@ -1,10 +1,11 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../../context/AppContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets';
 
 const Register = () => {
-    const { register, navigate } = useContext(AppContext);
+    const { register } = useContext(AppContext);
+    const navigate = useNavigate();
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -48,7 +49,7 @@ const Register = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <img
-                        src={assets.logo}
+                        src={assets.yunay_logo}
                         alt="Yunay-CA Academy"
                         className="w-32 mx-auto mb-4"
                     />

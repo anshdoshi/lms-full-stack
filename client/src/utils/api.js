@@ -55,6 +55,9 @@ export const userAPI = {
     updateCourseProgress: (data) => api.post('/api/user/update-course-progress', data),
     getCourseProgress: (data) => api.post('/api/user/get-course-progress', data),
     addRating: (data) => api.post('/api/user/add-rating', data),
+    updateProfile: (formData) => api.put('/api/user/update-profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
 };
 
 // Educator API calls
@@ -65,6 +68,11 @@ export const educatorAPI = {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
     getCourses: () => api.get('/api/educator/courses'),
+    getCourseById: (id) => api.get(`/api/educator/courses/${id}`),
+    updateCourse: (id, formData) => api.put(`/api/educator/courses/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    deleteCourse: (id) => api.delete(`/api/educator/courses/${id}`),
     getDashboard: () => api.get('/api/educator/dashboard'),
     getEnrolledStudents: () => api.get('/api/educator/enrolled-students'),
 };

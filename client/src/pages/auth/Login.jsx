@@ -1,10 +1,11 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../../context/AppContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { assets } from '../../assets/assets';
 
 const Login = () => {
-    const { login, navigate } = useContext(AppContext);
+    const { login } = useContext(AppContext);
+    const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -32,7 +33,7 @@ const Login = () => {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <img
-                        src={assets.logo}
+                        src={assets.yunay_logo}
                         alt="Yunay-CA Academy"
                         className="w-32 mx-auto mb-4"
                     />

@@ -92,7 +92,7 @@ const ApplyEducator = () => {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <img
-                        src={assets.logo}
+                        src={assets.yunay_logo}
                         alt="Yunay-CA Academy"
                         className="w-24 mx-auto mb-4"
                     />

@@ -213,7 +213,7 @@ export const getAllCourses = async (req, res) => {
         const query = search ? { courseTitle: { $regex: search, $options: 'i' } } : {};
 
         const courses = await Course.find(query)
-            .populate('educatorId', 'name email')
+            .populate('educator', 'name email')
             .limit(limit * 1)
             .skip((page - 1) * limit)
             .sort({ createdAt: -1 });
