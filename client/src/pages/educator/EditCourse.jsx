@@ -29,8 +29,12 @@ const EditCourse = () => {
     lectureTitle: '',
     lectureDuration: '',
     lectureUrl: '',
+    videoType: 'youtube', // 'youtube' or 'upload'
+    videoFile: null,
     isPreviewFree: false,
   });
+  const [videoFiles, setVideoFiles] = useState({});
+  const [uploadingVideo, setUploadingVideo] = useState(false);
 
   // Fetch course data
   const fetchCourseData = async () => {
@@ -102,11 +106,32 @@ const EditCourse = () => {
   };
 
   const addLecture = () => {
+    // Validate lecture details
+    if (!lectureDetails.lectureTitle || !lectureDetails.lectureDuration) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (lectureDetails.videoType === 'youtube' && !lectureDetails.lectureUrl) {
+      toast.error('Please enter a YouTube URL');
+      return;
+    }
+
+    if (lectureDetails.videoType === 'upload' && !lectureDetails.videoFile) {
+      toast.error('Please select a video file');
+      return;
+    }
+
     setChapters(
       chapters.map((chapter) => {
         if (chapter.chapterId === currentChapterId) {
           const newLecture = {
-            ...lectureDetails,
+            lectureTitle: lectureDetails.lectureTitle,
+            lectureDuration: lectureDetails.lectureDuration,
+            lectureUrl: lectureDetails.lectureUrl,
+            videoType: lectureDetails.videoType,
+            videoFile: lectureDetails.videoFile,
+            isPreviewFree: lectureDetails.isPreviewFree,
             lectureOrder: chapter.chapterContent.length > 0 ? chapter.chapterContent.slice(-1)[0].lectureOrder + 1 : 1,
             lectureId: uniqid(),
           };
@@ -120,6 +145,8 @@ const EditCourse = () => {
       lectureTitle: '',
       lectureDuration: '',
       lectureUrl: '',
+      videoType: 'youtube',
+      videoFile: null,
       isPreviewFree: false,
     });
   };
@@ -128,12 +155,33 @@ const EditCourse = () => {
     try {
       e.preventDefault();
 
+      // Check if any lectures have video files to upload
+      const hasVideoUploads = chapters.some(chapter =>
+        chapter.chapterContent.some(lecture => lecture.videoType === 'upload' && lecture.videoFile)
+      );
+
+      if (hasVideoUploads) {
+        setUploadingVideo(true);
+        toast.info('Uploading videos... This may take a few minutes.');
+      }
+
       const courseData = {
         courseTitle,
         courseDescription: quillRef.current.root.innerHTML,
         coursePrice: Number(coursePrice),
         discount: Number(discount),
-        courseContent: chapters,
+        courseContent: chapters.map(chapter => ({
+          ...chapter,
+          chapterContent: chapter.chapterContent.map(lecture => ({
+            lectureId: lecture.lectureId,
+            lectureTitle: lecture.lectureTitle,
+            lectureDuration: lecture.lectureDuration,
+            lectureUrl: lecture.lectureUrl,
+            videoType: lecture.videoType,
+            isPreviewFree: lecture.isPreviewFree,
+            lectureOrder: lecture.lectureOrder
+          }))
+        })),
       };
 
       const formData = new FormData();
@@ -144,7 +192,18 @@ const EditCourse = () => {
         formData.append('image', image);
       }
 
+      // Append video files
+      chapters.forEach((chapter) => {
+        chapter.chapterContent.forEach((lecture) => {
+          if (lecture.videoType === 'upload' && lecture.videoFile) {
+            formData.append(`video_${chapter.chapterId}_${lecture.lectureId}`, lecture.videoFile);
+          }
+        });
+      });
+
       const { data } = await educatorAPI.updateCourse(id, formData);
+
+      setUploadingVideo(false);
 
       if (data.success) {
         toast.success(data.message);
@@ -153,6 +212,7 @@ const EditCourse = () => {
         toast.error(data.message);
       }
     } catch (error) {
+      setUploadingVideo(false);
       toast.error(error.message);
     }
   };
@@ -285,11 +345,13 @@ const EditCourse = () => {
                   {chapter.chapterContent.map((lecture, lectureIndex) => (
                     <div key={lecture.lectureId || lectureIndex} className="flex justify-between items-center mb-2">
                       <span>
-                        {lectureIndex + 1} {lecture.lectureTitle} - {lecture.lectureDuration} mins -{' '}
-                        <a href={lecture.lectureUrl} target="_blank" rel="noreferrer" className="text-blue-500">
-                          Link
-                        </a>{' '}
-                        - {lecture.isPreviewFree ? 'Free Preview' : 'Paid'}
+                        {lectureIndex + 1} {lecture.lectureTitle} - {lecture.lectureDuration} mins - 
+                        {lecture.videoType === 'youtube' || !lecture.videoType ? (
+                          <a href={lecture.lectureUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 ml-1">YouTube</a>
+                        ) : (
+                          <span className="text-green-600 ml-1">📹 Video File</span>
+                        )}
+                        {' '}- {lecture.isPreviewFree ? 'Free Preview' : 'Paid'}
                       </span>
                       <img
                         onClick={() => handleLecture('remove', chapter.chapterId, lectureIndex)}
@@ -318,52 +380,133 @@ const EditCourse = () => {
 
           {showPopup && (
             <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-              <div className="bg-white text-gray-700 p-4 rounded relative w-full max-w-80">
+              <div className="bg-white text-gray-700 p-6 rounded relative w-full max-w-md max-h-[90vh] overflow-y-auto">
                 <h2 className="text-lg font-semibold mb-4">Add Lecture</h2>
-                <div className="mb-2">
-                  <p>Lecture Title</p>
+                
+                <div className="mb-3">
+                  <p className="mb-1">Lecture Title *</p>
                   <input
                     type="text"
-                    className="mt-1 block w-full border rounded py-1 px-2"
+                    className="mt-1 block w-full border rounded py-2 px-3"
+                    placeholder="Enter lecture title"
                     value={lectureDetails.lectureTitle}
                     onChange={(e) => setLectureDetails({ ...lectureDetails, lectureTitle: e.target.value })}
                   />
                 </div>
-                <div className="mb-2">
-                  <p>Duration (minutes)</p>
+
+                <div className="mb-3">
+                  <p className="mb-1">Duration (minutes) *</p>
                   <input
                     type="number"
-                    className="mt-1 block w-full border rounded py-1 px-2"
+                    className="mt-1 block w-full border rounded py-2 px-3"
+                    placeholder="Enter duration"
                     value={lectureDetails.lectureDuration}
                     onChange={(e) => setLectureDetails({ ...lectureDetails, lectureDuration: e.target.value })}
                   />
                 </div>
-                <div className="mb-2">
-                  <p>Lecture URL</p>
-                  <input
-                    type="text"
-                    className="mt-1 block w-full border rounded py-1 px-2"
-                    value={lectureDetails.lectureUrl}
-                    onChange={(e) => setLectureDetails({ ...lectureDetails, lectureUrl: e.target.value })}
-                  />
+
+                <div className="mb-3">
+                  <p className="mb-2">Video Source *</p>
+                  <div className="flex gap-4 mb-3">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="videoType"
+                        value="youtube"
+                        checked={lectureDetails.videoType === 'youtube'}
+                        onChange={(e) => setLectureDetails({ ...lectureDetails, videoType: e.target.value, videoFile: null })}
+                        className="scale-125"
+                      />
+                      <span>YouTube URL</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="videoType"
+                        value="upload"
+                        checked={lectureDetails.videoType === 'upload'}
+                        onChange={(e) => setLectureDetails({ ...lectureDetails, videoType: e.target.value, lectureUrl: '' })}
+                        className="scale-125"
+                      />
+                      <span>Upload Video</span>
+                    </label>
+                  </div>
+
+                  {lectureDetails.videoType === 'youtube' ? (
+                    <div>
+                      <input
+                        type="text"
+                        className="mt-1 block w-full border rounded py-2 px-3"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value={lectureDetails.lectureUrl}
+                        onChange={(e) => setLectureDetails({ ...lectureDetails, lectureUrl: e.target.value })}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Enter full YouTube URL</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        accept="video/mp4,video/mpeg,video/quicktime,video/x-msvideo,video/webm"
+                        className="mt-1 block w-full border rounded py-2 px-3"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            // Check file size (100MB limit)
+                            if (file.size > 100 * 1024 * 1024) {
+                              toast.error('Video file size must be less than 100MB');
+                              e.target.value = '';
+                              return;
+                            }
+                            setLectureDetails({ ...lectureDetails, videoFile: file });
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Supported: MP4, MOV, AVI, WebM (Max 100MB)
+                      </p>
+                      {lectureDetails.videoFile && (
+                        <p className="text-sm text-green-600 mt-2">
+                          ✓ {lectureDetails.videoFile.name} ({(lectureDetails.videoFile.size / (1024 * 1024)).toFixed(2)} MB)
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2 my-4">
-                  <p>Is Preview Free?</p>
+
+                <div className="flex items-center gap-2 my-4">
                   <input
                     type="checkbox"
-                    className="mt-1 scale-125"
+                    id="isPreviewFree"
+                    className='scale-125'
                     checked={lectureDetails.isPreviewFree}
                     onChange={(e) => setLectureDetails({ ...lectureDetails, isPreviewFree: e.target.checked })}
                   />
+                  <label htmlFor="isPreviewFree" className="cursor-pointer">Is Preview Free?</label>
                 </div>
-                <button type="button" className="w-full bg-blue-400 text-white px-4 py-2 rounded" onClick={addLecture}>
-                  Add
+
+                <button 
+                  type='button' 
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors" 
+                  onClick={addLecture}
+                >
+                  Add Lecture
                 </button>
-                <img
-                  onClick={() => setShowPopup(false)}
-                  src={assets.cross_icon}
-                  className="absolute top-4 right-4 w-4 cursor-pointer"
-                  alt=""
+                <img 
+                  onClick={() => {
+                    setShowPopup(false);
+                    setLectureDetails({
+                      lectureTitle: '',
+                      lectureDuration: '',
+                      lectureUrl: '',
+                      videoType: 'youtube',
+                      videoFile: null,
+                      isPreviewFree: false,
+                    });
+                  }} 
+                  src={assets.cross_icon} 
+                  className='absolute top-4 right-4 w-4 cursor-pointer' 
+                  alt="" 
                 />
               </div>
             </div>
@@ -371,8 +514,12 @@ const EditCourse = () => {
         </div>
 
         <div className="flex gap-4">
-          <button type="submit" className="bg-blue-600 text-white w-max py-2.5 px-8 rounded my-4 hover:bg-blue-700">
-            Update Course
+          <button 
+            type="submit" 
+            className="bg-blue-600 text-white w-max py-2.5 px-8 rounded my-4 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={uploadingVideo}
+          >
+            {uploadingVideo ? 'Uploading Videos...' : 'Update Course'}
           </button>
           <button
             type="button"
@@ -382,6 +529,11 @@ const EditCourse = () => {
             Cancel
           </button>
         </div>
+        {uploadingVideo && (
+          <p className="text-sm text-blue-600 mb-4">
+            ⏳ Please wait while videos are being uploaded. This may take several minutes depending on file sizes.
+          </p>
+        )}
       </form>
     </div>
   );

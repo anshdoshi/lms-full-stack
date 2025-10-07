@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../utils/api';
 import { toast } from 'react-toastify';
 
 const CourseManagement = () => {
+    const navigate = useNavigate();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -77,9 +79,18 @@ const CourseManagement = () => {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold text-gray-900">Course Management</h1>
-                <p className="text-gray-600 mt-2">Manage all courses on the platform</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Course Management</h1>
+                    <p className="text-gray-600 mt-2">Manage all courses on the platform</p>
+                </div>
+                <button
+                    onClick={() => navigate('/admin/courses/create')}
+                    className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2"
+                >
+                    <span className="text-xl">+</span>
+                    Create Course
+                </button>
             </div>
 
             {/* Search */}
@@ -176,13 +187,19 @@ const CourseManagement = () => {
 
                                     <div className="flex gap-2">
                                         <button
+                                            onClick={() => navigate(`/admin/courses/edit/${course._id}`)}
+                                            className="flex-1 px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition text-sm font-medium"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
                                             onClick={() => {
                                                 setSelectedCourse(course);
                                                 setShowDetailsModal(true);
                                             }}
                                             className="flex-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
                                         >
-                                            View Details
+                                            View
                                         </button>
                                         <button
                                             onClick={() => {

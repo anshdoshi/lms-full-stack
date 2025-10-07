@@ -17,6 +17,7 @@ const CourseDetails = () => {
   const [courseData, setCourseData] = useState(null)
   const [playerData, setPlayerData] = useState(null)
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false)
+  const [showNoVideoPopup, setShowNoVideoPopup] = useState(false)
 
   const { backendUrl, currency, userData, user, calculateChapterTime, calculateCourseDuration, calculateRating, calculateNoOfLectures } = useContext(AppContext)
 
@@ -51,81 +52,28 @@ const CourseDetails = () => {
   };
 
 
-  const enrollCourse = async () => {
-
-    try {
-
-      if (!user) {
-        return toast.warn('Login to Enroll')
-      }
-
-      if (isAlreadyEnrolled) {
-        return toast.warn('Already Enrolled')
-      }
-
-      const { data } = await userAPI.purchaseCourse(courseData._id)
-
-      if (data.success) {
-        // Check if payment is configured (backend returns orderId when Razorpay is configured)
-        if (data.orderId && data.keyId) {
-          // Razorpay payment flow
-          const options = {
-            key: data.keyId,
-            amount: data.amount * 100, // Convert to paise
-            currency: data.currency,
-            name: 'Yunay-CA Academy',
-            description: courseData.courseTitle,
-            order_id: data.orderId,
-            handler: async function (response) {
-              try {
-                const verifyData = await userAPI.verifyPayment({
-                  razorpayOrderId: response.razorpay_order_id,
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpaySignature: response.razorpay_signature,
-                  paymentId: data.paymentId
-                });
-                
-                if (verifyData.data.success) {
-                  toast.success('Payment successful! Redirecting...');
-                  // Redirect to success page
-                  setTimeout(() => {
-                    window.location.href = `/payment-success?courseId=${courseData._id}&paymentId=${response.razorpay_payment_id}`;
-                  }, 1000);
-                }
-              } catch (error) {
-                toast.error('Payment verification failed');
-                // Redirect to failure page
-                window.location.href = `/payment-failure?courseId=${courseData._id}&reason=verification_failed`;
-              }
-            },
-            modal: {
-              ondismiss: function() {
-                // User closed the payment modal
-                toast.info('Payment cancelled');
-                window.location.href = `/payment-failure?courseId=${courseData._id}&reason=cancelled`;
-              }
-            },
-            theme: {
-              color: '#3B82F6'
-            }
-          };
-          
-          const razorpay = new window.Razorpay(options);
-          razorpay.on('payment.failed', function (response) {
-            toast.error('Payment failed');
-            window.location.href = `/payment-failure?courseId=${courseData._id}&reason=payment_failed`;
-          });
-          razorpay.open();
-        } else {
-          // Payment system not configured or free course
-          toast.info(data.message || 'Payment system under development');
+  const handlePlayVideo = () => {
+    // Find the first available video in the course
+    let firstVideo = null;
+    
+    for (const chapter of courseData.courseContent) {
+      for (const lecture of chapter.chapterContent) {
+        if (lecture.lectureUrl && lecture.lectureUrl.trim() !== '') {
+          firstVideo = lecture;
+          break;
         }
-      } else {
-        toast.error(data.message)
       }
+      if (firstVideo) break;
+    }
 
-    } catch (error) {
-      toast.error(error.response?.data?.message || error.message)
+    if (firstVideo) {
+      // Play the video
+      setPlayerData({
+        videoId: firstVideo.lectureUrl.split('/').pop()
+      });
+    } else {
+      // Show popup with course thumbnail
+      setShowNoVideoPopup(true);
     }
   }
 
@@ -247,8 +195,9 @@ const CourseDetails = () => {
                 <p>{calculateNoOfLectures(courseData)} lessons</p>
               </div>
             </div>
-            <button onClick={enrollCourse} className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium">
-              {isAlreadyEnrolled ? "Already Enrolled" : "Enroll Now"}
+            <button onClick={handlePlayVideo} className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium flex items-center justify-center gap-2">
+              <img src={assets.play_icon} alt="play" className="w-5 h-5 brightness-0 invert" />
+              Play Video
             </button>
             <div className="pt-6">
               <p className="md:text-xl text-lg font-medium text-gray-800">What's in the course?</p>
@@ -263,6 +212,36 @@ const CourseDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* No Video Popup */}
+      {showNoVideoPopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative">
+            <button
+              onClick={() => setShowNoVideoPopup(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+            >
+              ×
+            </button>
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">No Video Available</h3>
+              <p className="text-gray-600 mb-6">This course doesn't have any videos yet. Check back later!</p>
+              <img 
+                src={courseData.courseThumbnail} 
+                alt={courseData.courseTitle}
+                className="w-full max-h-96 object-cover rounded-lg mb-4"
+              />
+              <button
+                onClick={() => setShowNoVideoPopup(false)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </>
   ) : <Loading />

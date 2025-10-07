@@ -19,6 +19,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import UserManagement from './pages/admin/UserManagement'
 import EducatorApplications from './pages/admin/EducatorApplications'
 import CourseManagement from './pages/admin/CourseManagement'
+import AddEditCourse from './pages/admin/AddEditCourse'
 import 'quill/dist/quill.snow.css'
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify'
@@ -122,6 +123,8 @@ const App = () => {
           <Route path='users' element={<UserManagement />} />
           <Route path='applications' element={<EducatorApplications />} />
           <Route path='courses' element={<CourseManagement />} />
+          <Route path='courses/create' element={<AddEditCourse />} />
+          <Route path='courses/edit/:courseId' element={<AddEditCourse />} />
         </Route>
       </Routes>
     </div>

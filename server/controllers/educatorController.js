@@ -200,24 +200,36 @@ export const getEnrolledStudentsData = async (req, res) => {
     try {
         const educator = req.userId;
 
-        // Fetch all courses created by the educator
-        const courses = await Course.find({ educator });
+        // Fetch all courses created by the educator with populated enrolled students
+        const courses = await Course.find({ educator })
+            .populate('enrolledStudents', 'name email imageUrl');
 
-        // Get the list of course IDs
-        const courseIds = courses.map(course => course._id);
+        // Collect all enrolled students with their course information
+        const enrolledStudents = [];
 
-        // Fetch payments with user and course data
-        const payments = await Payment.find({
-            courseId: { $in: courseIds },
-            status: 'completed'
-        }).populate('userId', 'name imageUrl').populate('courseId', 'courseTitle');
+        for (const course of courses) {
+            if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+                for (const student of course.enrolledStudents) {
+                    // Try to find payment data for this enrollment
+                    const payment = await Payment.findOne({
+                        userId: student._id,
+                        courseId: course._id,
+                        status: 'completed'
+                    });
 
-        // enrolled students data
-        const enrolledStudents = payments.map(payment => ({
-            student: payment.userId,
-            courseTitle: payment.courseId.courseTitle,
-            purchaseDate: payment.createdAt
-        }));
+                    enrolledStudents.push({
+                        student: {
+                            _id: student._id,
+                            name: student.name,
+                            email: student.email,
+                            imageUrl: student.imageUrl || 'https://via.placeholder.com/150'
+                        },
+                        courseTitle: course.courseTitle,
+                        purchaseDate: payment ? payment.createdAt : course.createdAt
+                    });
+                }
+            }
+        }
 
         res.json({
             success: true,

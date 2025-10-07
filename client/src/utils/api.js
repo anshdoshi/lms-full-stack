@@ -80,14 +80,35 @@ export const educatorAPI = {
 // Admin API calls
 export const adminAPI = {
     getDashboard: () => api.get('/api/admin/dashboard'),
+    // User Management
     getUsers: (params) => api.get('/api/admin/users', { params }),
+    getUserById: (userId) => api.get(`/api/admin/users/${userId}`),
+    createUser: (data) => api.post('/api/admin/users', data),
+    updateUser: (userId, data) => api.put(`/api/admin/users/${userId}`, data),
     updateUserRole: (userId, role) => api.put(`/api/admin/users/${userId}/role`, { role }),
     deleteUser: (userId) => api.delete(`/api/admin/users/${userId}`),
+    // Educator Applications
     getEducatorApplications: (status) => api.get('/api/admin/educator-applications', { params: { status } }),
+    createEducatorApplication: (data) => api.post('/api/admin/educator-applications', data),
+    updateEducatorApplication: (applicationId, data) => api.put(`/api/admin/educator-applications/${applicationId}`, data),
     approveApplication: (applicationId) => api.put(`/api/admin/educator-applications/${applicationId}/approve`),
     rejectApplication: (applicationId) => api.put(`/api/admin/educator-applications/${applicationId}/reject`),
+    deleteEducatorApplication: (applicationId) => api.delete(`/api/admin/educator-applications/${applicationId}`),
+    // Course Management
     getCourses: (params) => api.get('/api/admin/courses', { params }),
+    getCourseById: (courseId) => api.get(`/api/admin/courses/${courseId}`),
+    createCourse: (formData) => api.post('/api/admin/courses', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+    updateCourse: (courseId, formData) => api.put(`/api/admin/courses/${courseId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }),
     deleteCourse: (courseId) => api.delete(`/api/admin/courses/${courseId}`),
+    // Category Management
+    getCategories: () => api.get('/api/admin/categories'),
+    createCategory: (data) => api.post('/api/admin/categories', data),
+    updateCategory: (categoryId, data) => api.put(`/api/admin/categories/${categoryId}`, data),
+    deleteCategory: (categoryId) => api.delete(`/api/admin/categories/${categoryId}`),
 };
 
 // Course API calls (public)

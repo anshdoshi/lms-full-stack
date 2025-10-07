@@ -10,6 +10,9 @@ import {
     getEducatorApplications,
     approveEducatorApplication,
     rejectEducatorApplication,
+    createEducatorApplication,
+    updateEducatorApplication,
+    deleteEducatorApplication,
     getAllCourses,
     createCourse,
     updateCourse,
@@ -41,8 +44,11 @@ adminRouter.delete('/users/:userId', deleteUser);
 
 // Educator Applications
 adminRouter.get('/educator-applications', getEducatorApplications);
+adminRouter.post('/educator-applications', createEducatorApplication);
+adminRouter.put('/educator-applications/:applicationId', updateEducatorApplication);
 adminRouter.put('/educator-applications/:applicationId/approve', approveEducatorApplication);
 adminRouter.put('/educator-applications/:applicationId/reject', rejectEducatorApplication);
+adminRouter.delete('/educator-applications/:applicationId', deleteEducatorApplication);
 
 // Course Management
 adminRouter.get('/courses', getAllCourses);

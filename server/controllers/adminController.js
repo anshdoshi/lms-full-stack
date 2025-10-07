@@ -208,6 +208,112 @@ export const rejectEducatorApplication = async (req, res) => {
     }
 };
 
+// Create Educator Application (Admin)
+export const createEducatorApplication = async (req, res) => {
+    try {
+        const { userId, message, status } = req.body;
+
+        if (!userId || !message) {
+            return res.json({ success: false, message: 'User ID and message are required' });
+        }
+
+        // Check if user exists
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        // Check if user already has a pending application
+        const existingApplication = await EducatorApplication.findOne({ 
+            userId, 
+            status: 'pending' 
+        });
+
+        if (existingApplication) {
+            return res.json({ success: false, message: 'User already has a pending application' });
+        }
+
+        // Check if user is already an educator
+        if (user.role === 'educator' || user.role === 'admin') {
+            return res.json({ success: false, message: 'User is already an educator or admin' });
+        }
+
+        // Create application
+        const application = await EducatorApplication.create({
+            userId,
+            message,
+            status: status || 'pending'
+        });
+
+        const populatedApplication = await EducatorApplication.findById(application._id)
+            .populate('userId', 'name email imageUrl');
+
+        res.json({
+            success: true,
+            message: 'Educator application created successfully',
+            application: populatedApplication
+        });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Update Educator Application (Admin)
+export const updateEducatorApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        const { message, status } = req.body;
+
+        const application = await EducatorApplication.findById(applicationId);
+
+        if (!application) {
+            return res.json({ success: false, message: 'Application not found' });
+        }
+
+        // Update fields
+        if (message) application.message = message;
+        if (status && ['pending', 'approved', 'rejected'].includes(status)) {
+            application.status = status;
+        }
+
+        await application.save();
+
+        const updatedApplication = await EducatorApplication.findById(applicationId)
+            .populate('userId', 'name email imageUrl');
+
+        res.json({
+            success: true,
+            message: 'Application updated successfully',
+            application: updatedApplication
+        });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
+// Delete Educator Application (Admin)
+export const deleteEducatorApplication = async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+
+        const application = await EducatorApplication.findByIdAndDelete(applicationId);
+
+        if (!application) {
+            return res.json({ success: false, message: 'Application not found' });
+        }
+
+        res.json({
+            success: true,
+            message: 'Application deleted successfully'
+        });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
+
 // Get All Courses (Admin View)
 export const getAllCourses = async (req, res) => {
     try {
