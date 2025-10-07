@@ -261,7 +261,7 @@ export const updateCourse = async (req, res) => {
     try {
         const { id } = req.params;
         const { courseData } = req.body;
-        const imageFile = req.file;
+        const files = req.files;
         const educator = req.userId;
 
         const course = await Course.findById(id);
@@ -286,9 +286,39 @@ export const updateCourse = async (req, res) => {
         course.courseCategory = parsedCourseData.courseCategory;
 
         // Update thumbnail if new image is provided
+        const imageFile = files?.find(file => file.fieldname === 'image');
         if (imageFile) {
-            const imageUpload = await cloudinary.uploader.upload(imageFile.path);
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+                folder: 'lms-thumbnails'
+            });
             course.courseThumbnail = imageUpload.secure_url;
+        }
+
+        // Handle video updates - similar to addCourse
+        for (const chapter of parsedCourseData.courseContent) {
+            for (const lecture of chapter.chapterContent) {
+                if (lecture.videoType === 'upload') {
+                    const videoFieldName = `video_${chapter.chapterId}_${lecture.lectureId}`;
+                    const videoFile = files?.find(file => file.fieldname === videoFieldName);
+
+                    if (videoFile) {
+                        console.log(`Uploading updated video for lecture: ${lecture.lectureTitle}`);
+
+                        const videoUpload = await cloudinary.uploader.upload(videoFile.path, {
+                            resource_type: 'video',
+                            folder: 'lms-videos',
+                            chunk_size: 6000000,
+                            eager: [
+                                { width: 1280, height: 720, crop: 'limit', format: 'mp4' }
+                            ],
+                            eager_async: true
+                        });
+
+                        lecture.lectureUrl = videoUpload.secure_url;
+                        console.log(`Video updated successfully: ${videoUpload.secure_url}`);
+                    }
+                }
+            }
         }
 
         await course.save();
@@ -296,6 +326,7 @@ export const updateCourse = async (req, res) => {
         res.json({ success: true, message: 'Course updated successfully' });
 
     } catch (error) {
+        console.error('Error updating course:', error);
         res.json({ success: false, message: error.message });
     }
 };
