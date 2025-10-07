@@ -1,5 +1,5 @@
 import express from 'express'
-import { addUserRating, getUserCourseProgress, getUserData, purchaseCourse, updateUserCourseProgress, updateUserProfile, userEnrolledCourses, verifyPayment } from '../controllers/userController.js';
+import { addUserRating, deleteUserAccount, getUserCourseProgress, getUserData, purchaseCourse, updateUserCourseProgress, updateUserProfile, userEnrolledCourses, verifyPayment } from '../controllers/userController.js';
 import { authenticate } from '../middlewares/auth.js';
 import upload from '../configs/multer.js';
 
@@ -17,5 +17,6 @@ userRouter.post('/update-course-progress', updateUserCourseProgress)
 userRouter.post('/get-course-progress', getUserCourseProgress)
 userRouter.post('/add-rating', addUserRating)
 userRouter.put('/update-profile', upload.single('image'), updateUserProfile)
+userRouter.delete('/delete-account', deleteUserAccount)
 
 export default userRouter;

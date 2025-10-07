@@ -23,6 +23,11 @@ const courseSchema = new mongoose.Schema({
     coursePrice: { type: Number, required: true },
     isPublished: { type: Boolean, default: true },
     discount: { type: Number, required: true, min: 0, max: 100 },
+    courseCategory: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
+        default: null
+    },
     courseContent: [chapterSchema], // Use the chapter schema here
     educator: {
         type: String,

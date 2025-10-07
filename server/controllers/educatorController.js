@@ -200,24 +200,36 @@ export const getEnrolledStudentsData = async (req, res) => {
     try {
         const educator = req.userId;
 
-        // Fetch all courses created by the educator
-        const courses = await Course.find({ educator });
+        // Fetch all courses created by the educator with populated enrolled students
+        const courses = await Course.find({ educator })
+            .populate('enrolledStudents', 'name email imageUrl');
 
-        // Get the list of course IDs
-        const courseIds = courses.map(course => course._id);
+        // Collect all enrolled students with their course information
+        const enrolledStudents = [];
 
-        // Fetch payments with user and course data
-        const payments = await Payment.find({
-            courseId: { $in: courseIds },
-            status: 'completed'
-        }).populate('userId', 'name imageUrl').populate('courseId', 'courseTitle');
+        for (const course of courses) {
+            if (course.enrolledStudents && course.enrolledStudents.length > 0) {
+                for (const student of course.enrolledStudents) {
+                    // Try to find payment data for this enrollment
+                    const payment = await Payment.findOne({
+                        userId: student._id,
+                        courseId: course._id,
+                        status: 'completed'
+                    });
 
-        // enrolled students data
-        const enrolledStudents = payments.map(payment => ({
-            student: payment.userId,
-            courseTitle: payment.courseId.courseTitle,
-            purchaseDate: payment.createdAt
-        }));
+                    enrolledStudents.push({
+                        student: {
+                            _id: student._id,
+                            name: student.name,
+                            email: student.email,
+                            imageUrl: student.imageUrl || 'https://via.placeholder.com/150'
+                        },
+                        courseTitle: course.courseTitle,
+                        purchaseDate: payment ? payment.createdAt : course.createdAt
+                    });
+                }
+            }
+        }
 
         res.json({
             success: true,
@@ -261,7 +273,7 @@ export const updateCourse = async (req, res) => {
     try {
         const { id } = req.params;
         const { courseData } = req.body;
-        const imageFile = req.file;
+        const files = req.files;
         const educator = req.userId;
 
         const course = await Course.findById(id);
@@ -286,9 +298,39 @@ export const updateCourse = async (req, res) => {
         course.courseCategory = parsedCourseData.courseCategory;
 
         // Update thumbnail if new image is provided
+        const imageFile = files?.find(file => file.fieldname === 'image');
         if (imageFile) {
-            const imageUpload = await cloudinary.uploader.upload(imageFile.path);
+            const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
+                folder: 'lms-thumbnails'
+            });
             course.courseThumbnail = imageUpload.secure_url;
+        }
+
+        // Handle video updates - similar to addCourse
+        for (const chapter of parsedCourseData.courseContent) {
+            for (const lecture of chapter.chapterContent) {
+                if (lecture.videoType === 'upload') {
+                    const videoFieldName = `video_${chapter.chapterId}_${lecture.lectureId}`;
+                    const videoFile = files?.find(file => file.fieldname === videoFieldName);
+
+                    if (videoFile) {
+                        console.log(`Uploading updated video for lecture: ${lecture.lectureTitle}`);
+
+                        const videoUpload = await cloudinary.uploader.upload(videoFile.path, {
+                            resource_type: 'video',
+                            folder: 'lms-videos',
+                            chunk_size: 6000000,
+                            eager: [
+                                { width: 1280, height: 720, crop: 'limit', format: 'mp4' }
+                            ],
+                            eager_async: true
+                        });
+
+                        lecture.lectureUrl = videoUpload.secure_url;
+                        console.log(`Video updated successfully: ${videoUpload.secure_url}`);
+                    }
+                }
+            }
         }
 
         await course.save();
@@ -296,6 +338,7 @@ export const updateCourse = async (req, res) => {
         res.json({ success: true, message: 'Course updated successfully' });
 
     } catch (error) {
+        console.error('Error updating course:', error);
         res.json({ success: false, message: error.message });
     }
 };

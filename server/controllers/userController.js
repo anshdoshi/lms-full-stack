@@ -306,3 +306,32 @@ export const updateUserProfile = async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 };
+
+// Delete User Account
+export const deleteUserAccount = async (req, res) => {
+    try {
+        const userId = req.userId;
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.json({ success: false, message: 'User not found' });
+        }
+
+        // Prevent admin from deleting their own account via this endpoint
+        if (user.role === 'admin') {
+            return res.json({ success: false, message: 'Admin accounts cannot be deleted through this endpoint' });
+        }
+
+        // Delete the user
+        await User.findByIdAndDelete(userId);
+
+        res.json({
+            success: true,
+            message: 'Account deleted successfully'
+        });
+
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+};
