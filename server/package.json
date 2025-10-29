@@ -16,6 +16,7 @@
   "license": "ISC",
   "description": "Backend server for Yunay-CA Academy LMS platform",
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.5.1",
     "cors": "^2.8.5",

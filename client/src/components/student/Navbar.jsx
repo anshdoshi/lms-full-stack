@@ -54,6 +54,12 @@ const Navbar = () => {
               | <Link to='/my-enrollments' className="hover:text-primary-600 transition">
                 My Enrollments
               </Link>
+              | <Link to='/ai-test' className="hover:text-primary-600 transition">
+                AI Test
+              </Link>
+              | <Link to='/ai-chat' className="hover:text-primary-600 transition">
+                AI Tutor
+              </Link>
             </>
           )}
         </div>
@@ -87,6 +93,20 @@ const Navbar = () => {
                   onClick={() => setShowUserMenu(false)}
                 >
                   My Enrollments
+                </Link>
+                <Link
+                  to="/ai-test"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  AI Test
+                </Link>
+                <Link
+                  to="/ai-chat"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  AI Tutor
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -126,6 +146,9 @@ const Navbar = () => {
               | <Link to='/my-enrollments' className="hover:text-primary-600 transition">
                 Courses
               </Link>
+              | <Link to='/ai-test' className="hover:text-primary-600 transition">
+                AI
+              </Link>
             </>
           )}
         </div>
@@ -148,6 +171,20 @@ const Navbar = () => {
                   onClick={() => setShowUserMenu(false)}
                 >
                   Profile
+                </Link>
+                <Link
+                  to="/ai-test"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  AI Test
+                </Link>
+                <Link
+                  to="/ai-chat"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100 text-sm"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  AI Tutor
                 </Link>
                 <button
                   onClick={handleLogout}

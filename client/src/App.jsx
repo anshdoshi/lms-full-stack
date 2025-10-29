@@ -29,6 +29,10 @@ import PaymentSuccess from './pages/student/PaymentSuccess'
 import PaymentFailure from './pages/student/PaymentFailure'
 import Profile from './pages/student/Profile'
 import Loading from './components/student/Loading'
+import AITest from './pages/student/AITest'
+import TakeTest from './pages/student/TakeTest'
+import TestResult from './pages/student/TestResult'
+import AIChat from './pages/student/AIChat'
 
 const App = () => {
   // All hooks must be called at the top level, unconditionally
@@ -89,6 +93,38 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-test"
+          element={
+            <ProtectedRoute>
+              <AITest />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/take-test/:testId"
+          element={
+            <ProtectedRoute>
+              <TakeTest />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/test-result/:resultId"
+          element={
+            <ProtectedRoute>
+              <TestResult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-chat"
+          element={
+            <ProtectedRoute>
+              <AIChat />
             </ProtectedRoute>
           }
         />

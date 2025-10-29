@@ -46,12 +46,12 @@ const createTestUsers = async () => {
     // Create Student User
     let student = await User.findOne({ email: 'student@test.com' });
     if (!student) {
-      const hashedPassword = await bcrypt.hash('password123', 10);
+      const hashedPassword = await bcrypt.hash('student123', 10);
       student = await User.create({
         name: 'Test Student',
         email: 'student@test.com',
         password: hashedPassword,
-        role: 'student',
+        role: 'user',
         imageUrl: 'https://via.placeholder.com/150'
       });
       console.log('✅ Student user created:', student.email);
@@ -71,7 +71,7 @@ const createTestUsers = async () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Student:');
     console.log('  Email: student@test.com');
-    console.log('  Password: password123');
+    console.log('  Password: student123');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     await mongoose.connection.close();

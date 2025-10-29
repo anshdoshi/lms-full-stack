@@ -8,6 +8,7 @@ import authRouter from './routes/authRoutes.js'
 import educatorRouter from './routes/educatorRoutes.js'
 import courseRouter from './routes/courseRoute.js'
 import adminRouter from './routes/adminRoutes.js'
+import aiRouter from './routes/aiRoutes.js'
 
 // Initialize Express
 const app = express()
@@ -31,9 +32,10 @@ app.use('/api/user', userRouter)
 app.use('/api/educator', educatorRouter)
 app.use('/api/course', courseRouter)
 app.use('/api/admin', adminRouter)
+app.use('/api/ai', aiRouter)
 
 // Port
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001
 
 app.listen(PORT, () => {
   console.log(`Yunay-CA Academy Server is running on port ${PORT}`);
