@@ -11,7 +11,7 @@ const AITests = () => {
   const { backendUrl, token } = useContext(AppContext);
 
   const [loading, setLoading] = useState(true);
-  const [aiConfigured, setAiConfigured] = useState(true);
+  const [aiConfigured, setAiConfigured] = useState(null);
   const [tests, setTests] = useState([]);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -32,8 +32,9 @@ const AITests = () => {
       try {
         // Check AI status
         const statusRes = await axios.get(`${backendUrl}/api/ai/status`);
+        setAiConfigured(statusRes.data.configured);
+        
         if (!statusRes.data.configured) {
-          setAiConfigured(false);
           setLoading(false);
           return;
         }
@@ -48,6 +49,8 @@ const AITests = () => {
         }
       } catch (error) {
         console.error('Error fetching tests:', error);
+        // On error, assume AI is not configured
+        setAiConfigured(false);
       } finally {
         setLoading(false);
       }
@@ -92,18 +95,18 @@ const AITests = () => {
     return subjectMatch && difficultyMatch;
   });
 
-  if (loading) {
+  if (loading || aiConfigured === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading tests...</p>
+          <p className="text-gray-600">Loading AI Tests...</p>
         </div>
       </div>
     );
   }
 
-  if (!aiConfigured) {
+  if (aiConfigured === false) {
     return <AIMaintenanceMode />;
   }
 

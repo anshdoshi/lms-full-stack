@@ -5,9 +5,9 @@ const TestimonialsSection = () => {
 
   return (
     <div className="pb-14 px-8 md:px-0">
-      <h2 className="text-3xl font-medium text-gray-800">Testimonials</h2>
+      <h2 className="text-3xl font-medium text-gray-800">Success Stories from CA Students</h2>
       <p className="md:text-base text-gray-500 mt-3">
-        Hear from our learners as they share their journeys of transformation, success, and how our <br /> platform has made a difference in their lives.
+        Hear from CA aspirants and qualified Chartered Accountants as they share their journeys of <br /> transformation, success, and how our platform helped them achieve their CA dreams.
       </p>
       <div className="grid grid-cols-auto gap-8 mt-14">
         {dummyTestimonial.map((testimonial, index) => (

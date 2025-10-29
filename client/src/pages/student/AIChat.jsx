@@ -10,7 +10,7 @@ import MaintenanceMode from '../../components/student/MaintenanceMode';
 
 const AIChat = () => {
   const [loading, setLoading] = useState(true);
-  const [aiConfigured, setAiConfigured] = useState(false);
+  const [aiConfigured, setAiConfigured] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -44,6 +44,7 @@ const AIChat = () => {
       setAiConfigured(response.configured);
     } catch (error) {
       console.error('Error checking AI status:', error);
+      // On error, assume AI is not configured
       setAiConfigured(false);
     }
   };
@@ -161,19 +162,19 @@ const AIChat = () => {
     });
   };
 
-  if (!aiConfigured) {
-    return <MaintenanceMode feature="AI Chat Tutor" />;
-  }
-
-  if (loading) {
+  if (loading || aiConfigured === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading chat...</p>
+          <p className="text-gray-600">Loading AI Chat...</p>
         </div>
       </div>
     );
+  }
+
+  if (aiConfigured === false) {
+    return <MaintenanceMode feature="AI Chat Tutor" />;
   }
 
   return (

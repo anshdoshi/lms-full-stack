@@ -95,25 +95,25 @@ export const assets = {
 
 export const dummyTestimonial = [
     {
-        name: 'Donald Jackman',
-        role: 'SWE 1 @ Amazon',
+        name: 'Priya Sharma',
+        role: 'CA Final Student',
         image: assets.profile_img_1,
         rating: 5,
-        feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
+        feedback: 'The AI Tutor feature is a game-changer! It helped me clear my doubts instantly during late-night study sessions. The test generation feature helped me practice extensively before my CA exams.',
     },
     {
-        name: 'Richard Nelson',
-        role: 'SWE 2 @ Samsung',
+        name: 'Rahul Mehta',
+        role: 'Chartered Accountant',
         image: assets.profile_img_2,
-        rating: 4,
-        feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
+        rating: 5,
+        feedback: 'This platform made my CA journey so much easier. The structured courses and AI-powered practice tests gave me the confidence I needed to crack my exams. Highly recommended for all CA aspirants!',
     },
     {
-        name: 'James Washington',
-        role: 'SWE 2 @ Google',
+        name: 'Anjali Patel',
+        role: 'CA Intermediate Student',
         image: assets.profile_img_3,
         rating: 4.5,
-        feedback: 'I\'ve been using Imagify for nearly two years, primarily for Instagram, and it has been incredibly user-friendly, making my work much easier.',
+        feedback: 'The quality of content is exceptional! The courses are well-organized and cover all topics from the ICAI curriculum. The AI chat feature is like having a personal tutor available 24/7.',
     },
 ];
 
