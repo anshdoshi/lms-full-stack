@@ -237,14 +237,14 @@ const AITests = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Number of Questions</label>
                 <input
                   type="number"
-                  min="5"
+                  min="10"
                   max="50"
                   value={generateForm.numberOfQuestions}
                   onChange={(e) => setGenerateForm({ ...generateForm, numberOfQuestions: parseInt(e.target.value) })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-600"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Between 5 and 50 questions</p>
+                <p className="text-xs text-gray-500 mt-1">Between 10 and 50 questions</p>
               </div>
 
               <div className="flex gap-3 pt-4">

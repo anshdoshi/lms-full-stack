@@ -68,6 +68,7 @@ const AIChat = () => {
 
   const fetchChatHistory = async (sessionId) => {
     try {
+      setMessages([]); // Clear messages while loading
       const response = await getChatHistory(sessionId);
 
       if (response.success) {
@@ -79,9 +80,21 @@ const AIChat = () => {
     }
   };
 
+  const handleSessionClick = (sessionId) => {
+    if (sessionId === currentSession) return; // Don't reload if already selected
+    setCurrentSession(sessionId);
+    toast.info('Loading chat session...');
+  };
+
   const handleNewSession = () => {
     setCurrentSession(null);
     setMessages([]);
+    setInputMessage('');
+    // Scroll to top to show welcome screen
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    toast.success('New chat session started!');
   };
 
   const handleSendMessage = async (e) => {
@@ -164,7 +177,7 @@ const AIChat = () => {
   }
 
   return (
-    <div className="h-screen flex bg-gray-50">
+    <div className="h-screen flex bg-gray-50 overflow-hidden">
       {/* Sidebar */}
       <div
         className={`${
@@ -204,7 +217,7 @@ const AIChat = () => {
               {sessions.map((session) => (
                 <button
                   key={session.sessionId}
-                  onClick={() => setCurrentSession(session.sessionId)}
+                  onClick={() => handleSessionClick(session.sessionId)}
                   className={`w-full text-left p-3 rounded-lg transition ${
                     currentSession === session.sessionId
                       ? 'bg-primary-50 border-2 border-primary-200'
@@ -228,7 +241,7 @@ const AIChat = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -264,7 +277,7 @@ const AIChat = () => {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
           {messages.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">

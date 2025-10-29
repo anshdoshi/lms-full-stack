@@ -52,6 +52,11 @@ export const generateAITest = async (req, res) => {
             return res.json({ success: false, message: 'Please provide all required fields' });
         }
 
+        // Validate number of questions (minimum 10, maximum 50)
+        if (numberOfQuestions < 10 || numberOfQuestions > 50) {
+            return res.json({ success: false, message: 'Number of questions must be between 10 and 50' });
+        }
+
         const model = getGeminiClient();
 
         const prompt = `You are an expert CA (Chartered Accountant) educator creating high-quality test questions for Indian CA students. Focus on practical knowledge and exam-relevant topics.

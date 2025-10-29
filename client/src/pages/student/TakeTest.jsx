@@ -288,13 +288,22 @@ const TakeTest = () => {
               >
                 ← Previous
               </button>
-              <button
-                onClick={handleNext}
-                disabled={currentQuestion === test.questions.length - 1}
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next →
-              </button>
+              {currentQuestion === test.questions.length - 1 ? (
+                <button
+                  onClick={() => setShowConfirmSubmit(true)}
+                  disabled={submitting}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Submit Test
+                </button>
+              ) : (
+                <button
+                  onClick={handleNext}
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition"
+                >
+                  Next →
+                </button>
+              )}
             </div>
           </div>
         </div>
